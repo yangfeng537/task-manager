@@ -1,10 +1,9 @@
-import { NotFoundRender } from "@lark-apaas/client-toolkit/components/NotFoundRender";
-
 const NotFound = () => {
   return (
-    <>
-      <NotFoundRender />
-    </>
+    <div style={{ padding: 40, textAlign: 'center' }}>
+      <h1>404</h1>
+      <p>页面不存在</p>
+    </div>
   );
 };
 

@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useCallback } from 'react';
 import { Check, Trash2, Plus, ListTodo } from 'lucide-react';
 
 import { Button } from '@client/src/components/ui/button';
@@ -41,51 +40,61 @@ const priorityBorderClass: Record<TaskPriority, string> = {
 };
 
 export default function TasksPage() {
-  const queryClient = useQueryClient();
+  const [taskList, setTaskList] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('中');
   const [filterPriority, setFilterPriority] = useState<TaskPriority | 'all'>('all');
 
-  const { data: taskList = [], isLoading } = useQuery({
-    queryKey: ['tasks', filterPriority],
-    queryFn: () => tasksApi.getTasks(filterPriority),
-  });
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const list = await tasksApi.getTasks(filterPriority);
+      setTaskList(list);
+    } catch (e) {
+      console.error('加载任务失败', e);
+      toast.error('加载失败，请重试');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filterPriority]);
 
-  const createMutation = useMutation({
-    mutationFn: tasksApi.createTask,
-    retry: false,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      setTitle('');
-      setPriority('中');
-      toast.success('任务已添加');
-    },
-    onError: () => {
-      toast.error('添加失败，请重试');
-    },
-  });
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
-  const toggleMutation = useMutation({
-    mutationFn: ({ id, completed }: { id: number; completed: boolean }) =>
-      tasksApi.updateTask(id, { completed }),
-    retry: false,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: tasksApi.deleteTask,
-    retry: false,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast.success('任务已删除');
-    },
-  });
-
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!title.trim()) return;
-    createMutation.mutate({ title: title.trim(), priority });
+    try {
+      await tasksApi.createTask({ title: title.trim(), priority });
+      setTitle('');
+      toast.success('任务已添加');
+      refresh();
+    } catch (e) {
+      console.error('添加失败', e);
+      toast.error('添加失败，请重试');
+    }
+  };
+
+  const handleToggle = async (task: Task) => {
+    try {
+      await tasksApi.updateTask(task.id, { completed: !task.completed });
+      refresh();
+    } catch (e) {
+      console.error('切换状态失败', e);
+      toast.error('操作失败，请重试');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await tasksApi.deleteTask(id);
+      toast.success('任务已删除');
+      refresh();
+    } catch (e) {
+      console.error('删除失败', e);
+      toast.error('删除失败，请重试');
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -144,7 +153,7 @@ export default function TasksPage() {
               </Select>
               <Button
                 onClick={handleAdd}
-                disabled={!title.trim() || createMutation.isPending}
+                disabled={!title.trim()}
                 className="h-10 px-4"
               >
                 <Plus className="w-4 h-4 mr-1" />
@@ -202,12 +211,7 @@ export default function TasksPage() {
                       ? 'bg-success border-success text-success-foreground'
                       : 'border-input hover:border-primary hover:text-primary'
                   }`}
-                  onClick={() =>
-                    toggleMutation.mutate({
-                      id: task.id,
-                      completed: !task.completed,
-                    })
-                  }
+                  onClick={() => handleToggle(task)}
                   aria-label={task.completed ? '标记为未完成' : '标记为已完成'}
                 >
                   {task.completed && <Check className="w-4 h-4" />}
@@ -235,7 +239,7 @@ export default function TasksPage() {
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                  onClick={() => deleteMutation.mutate(task.id)}
+                  onClick={() => handleDelete(task.id)}
                   aria-label="删除任务"
                 >
                   <Trash2 className="w-4 h-4" />

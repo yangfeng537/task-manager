@@ -7,6 +7,7 @@ const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
+app.set('etag', false);
 app.use(express.json({ limit: '1mb' }));
 
 // 优先读取环境变量（Vercel 中配置），未配置时回退到默认项目

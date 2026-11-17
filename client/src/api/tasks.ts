@@ -1,4 +1,3 @@
-import { axiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBackend';
 import type {
   Task,
   TaskListResponse,
@@ -7,25 +6,36 @@ import type {
   TaskPriority,
 } from '@shared/api.interface';
 
-export async function getTasks(priority?: TaskPriority | 'all'): Promise<Task[]> {
-  const params: Record<string, string> = {};
-  if (priority && priority !== 'all') {
-    params.priority = priority;
+async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
+  const res = await fetch(url, {
+    method,
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    throw new Error(`请求失败：HTTP ${res.status}`);
   }
-  const response = await axiosForBackend.get<TaskListResponse>('/api/tasks', { params });
-  return response.data.items;
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
+}
+
+export async function getTasks(priority?: TaskPriority | 'all'): Promise<Task[]> {
+  const query =
+    priority && priority !== 'all'
+      ? `?priority=${encodeURIComponent(priority)}`
+      : '';
+  const data = await request<TaskListResponse>('GET', `/api/tasks${query}`);
+  return data.items;
 }
 
 export async function createTask(data: CreateTaskRequest): Promise<Task> {
-  const response = await axiosForBackend.post<Task>('/api/tasks', data);
-  return response.data;
+  return request<Task>('POST', '/api/tasks', data);
 }
 
 export async function updateTask(id: number, data: UpdateTaskRequest): Promise<Task> {
-  const response = await axiosForBackend.patch<Task>(`/api/tasks/${id}`, data);
-  return response.data;
+  return request<Task>('PATCH', `/api/tasks/${id}`, data);
 }
 
 export async function deleteTask(id: number): Promise<void> {
-  await axiosForBackend.delete(`/api/tasks/${id}`);
+  await request('DELETE', `/api/tasks/${id}`);
 }
