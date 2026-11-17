@@ -1,4 +1,4 @@
-/**
+ /**
  * Vercel Serverless 入口（Express + Supabase REST API）
  * 提供与 NestJS 后端完全一致的 /api/tasks 接口，前端无需任何改动。
  * 数据层：@supabase/supabase-js 直连 Supabase tasks 表。
@@ -11,9 +11,9 @@ app.use(express.json({ limit: '1mb' }));
 
 // 优先读取环境变量（Vercel 中配置），未配置时回退到默认项目
 const SUPABASE_URL =
-  process.env.SUPABASE_URL || 'https://dgsmeogzmwhyqzzzzrqy.supabase.co';
+  process.env.SUPABASE_URL || 'https://wlzduciqzlqrskvdzpwb.supabase.co';
 const SUPABASE_ANON_KEY =
-  process.env.SUPABASE_ANON_KEY || 'sb_publishable_YCq30tNoVWxTc65_z_EHug_FBoYtJly';
+  process.env.SUPABASE_ANON_KEY || 'sb_publishable_2P_2JSiIBIX3mXNMpuuPWQ_zGZidoow';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -158,7 +158,7 @@ app.delete('/api/tasks/:id', async (req, res) => {
       .single();
     if (findErr || !existing) return fail(res, 404, '任务不存在');
 
-    const { error } = await supabase.from(TABLE).delete().eq('id', id);
+    const { error } = supabase.from(TABLE).delete().eq('id', id);
     if (error) return fail(res, 500, error.message);
     res.json({ success: true });
   } catch (e) {
