@@ -107,7 +107,7 @@ export default function TasksPage() {
   const totalCount = taskList.length;
 
   return (
-    <div className="min-h-screen bg-background py-10 px-4">
+    <div className="min-h-screen bg-background py-12 px-4">
       <div className="max-w-2xl mx-auto rise">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -189,7 +189,7 @@ export default function TasksPage() {
           </div>
         ) : taskList.length === 0 ? (
           <Card className="border-dashed">
-            <CardContent className="py-12 text-center">
+            <CardContent className="py-10 text-center">
               <p className="text-muted-foreground text-sm">暂无任务</p>
               <p className="text-muted-foreground text-xs mt-1">
                 在上方输入框添加你的第一个任务吧
@@ -197,7 +197,7 @@ export default function TasksPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {taskList.map((task: Task) => (
               <div
                 key={task.id}
