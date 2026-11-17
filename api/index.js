@@ -158,7 +158,7 @@ app.delete('/api/tasks/:id', async (req, res) => {
       .single();
     if (findErr || !existing) return fail(res, 404, '任务不存在');
 
-    const { error } = supabase.from(TABLE).delete().eq('id', id);
+    const { error } = await supabase.from(TABLE).delete().eq('id', id);
     if (error) return fail(res, 500, error.message);
     res.json({ success: true });
   } catch (e) {
